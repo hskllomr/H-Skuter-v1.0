@@ -26,6 +26,9 @@ function App() {
     const [currentRentalId, setCurrentRentalId] = useState(null);
     const [userPos, setUserPos] = useState({ lat: 38.7205, lng: 35.4826 });
     const [user, setUser] = useState({ id: null, name: "", balance: 0 });
+
+    // 🎯 Otonom sürüş bitişini haritaya haber uçuracak yeni state
+    const [lastCompletedScooterId, setLastCompletedScooterId] = useState(null);
     const stompClient = useRef(null);
 
     useEffect(() => {
@@ -71,6 +74,11 @@ function App() {
                     if (data.serialnumber === 'H-SKUT-01') return;
 
                     console.log("Güncelleme Geldi (H-SKUT-01 Hariç):", data);
+
+                    // 🎯 Eğer skuter otonom sürüşünü tamamlayıp AVAILABLE olduysa bunu yakala
+                    if (data.status === 'AVAILABLE') {
+                        setLastCompletedScooterId(data.id);
+                    }
 
                     setScooters(prev => {
                         const exists = prev.find(s => s.id === data.id);
@@ -127,8 +135,6 @@ function App() {
             password: creds.password
         };
 
-        console.log("Giriş denemesi yapılıyor:", loginData); // Debug için
-
         axios.post('http://localhost:8080/api/auth/login', loginData)
             .then(res => {
                 const { token, id, name, balance } = res.data;
@@ -138,11 +144,8 @@ function App() {
                 localStorage.setItem('userName', name);
 
                 axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-
                 setUser({ id, name, balance });
-
                 setCurrentView('map');
-
                 fetchData(38.7205, 35.4826);
             })
             .catch(err => {
@@ -182,7 +185,6 @@ function App() {
 
             {currentView === 'map' && (
                 <>
-
                     <header style={{ background: "#2d3748", color: "white", padding: "10px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 1000 }}>
                         <h2 style={{ margin: 0 }}>🛴 H-SKUTER</h2>
                         <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
@@ -193,8 +195,6 @@ function App() {
 
                     <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
                         <aside style={{ width: "350px", borderRight: "1px solid #ddd", overflowY: "auto", padding: "20px", background: "#edf2f7" }}>
-
-
                             <div className="wallet-section" style={{ padding: '15px', backgroundColor: 'white', borderRadius: '12px', marginBottom: '20px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
                                 <h3 style={{ marginTop: 0, fontSize: '16px' }}>💳 Hızlı Bakiye Yükle</h3>
                                 <div className="add-funds" style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
@@ -222,26 +222,27 @@ function App() {
                             ))}
                         </aside>
 
-
                         <main style={{ flex: 1 }}>
-                            <Map scooters={scooters} />
+                            {/* 🎯 Sinyali Map bileşenine prop olarak geçiyoruz */}
+                            <Map scooters={scooters} lastCompletedScooterId={lastCompletedScooterId} />
                         </main>
                     </div>
                 </>
             )}
         </div>
-    );}
+    );
+}
 
+const btnStyle = {
+    padding: '8px 12px',
+    backgroundColor: '#3498db',
+    color: 'white',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    flex: 1
+};
 
-    const btnStyle = {
-        padding: '8px 12px',
-        backgroundColor: '#3498db',
-        color: 'white',
-        border: 'none',
-        borderRadius: '8px',
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        flex: 1
-    };
 export default App;
