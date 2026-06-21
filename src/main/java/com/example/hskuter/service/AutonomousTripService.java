@@ -21,11 +21,9 @@ public class AutonomousTripService {
     private final SimpMessagingTemplate messagingTemplate;
     private final ScooterSimulator scooterSimulator;
 
-    // 🔥 Hangi skuterin otonom sürüşünün aktif olduğunu bellek üzerinde tutan güvenli harita
     private final ConcurrentHashMap<Long, Boolean> activeAutonomousScooters = new ConcurrentHashMap<>();
 
     public void cancelTrip(Long scooterId) {
-        // Bellekten kaydı sildiğimiz an thread döngüden çıkacak
         activeAutonomousScooters.remove(scooterId);
     }
 
